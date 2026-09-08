@@ -1,0 +1,35 @@
+[project]
+name = "rag-eval-harness"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Uxamailyax", email = "usamailyas820@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "groq>=1.7.0",
+    "matplotlib>=3.11.1",
+    "numpy>=2.5.3",
+    "pandas>=3.0.5",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "python-dotenv>=1.2.3",
+    "pyyaml>=6.0.3",
+    "rank-bm25>=0.2.2",
+    "scikit-learn>=1.9.0",
+    "tqdm>=4.70.0",
+]
+
+[project.scripts]
+rag-eval-harness = "rag_eval_harness:main"
+
+[build-system]
+requires = ["uv_build>=0.12.10,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+]
