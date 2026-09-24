@@ -1,0 +1,65 @@
+{
+  "both_hit": 118,
+  "only_bm25": 32,
+  "only_dense": 71,
+  "neither": 279,
+  "union_rate": 0.442,
+  "examples": [
+    {
+      "query_id": "cuad:00308",
+      "query": "Consider the Intellectual Property Agreement between Nuance Communications, Inc. and Cerence Inc.; Is there a covenant not to sue included in this contract?",
+      "delta": 1.0,
+      "bm25_recall": 0.0,
+      "dense_recall": 1.0
+    },
+    {
+      "query_id": "cuad:03521",
+      "query": "Consider the License and Hosting Agreement between Corio Inc. and Changepoint, Inc.; What is the notice period required to terminate the renewal?",
+      "delta": 1.0,
+      "bm25_recall": 0.0,
+      "dense_recall": 1.0
+    },
+    {
+      "query_id": "cuad:00571",
+      "query": "Consider the Co-Promotion Agreement between Dova Pharmaceuticals, Inc. and Valeant Pharmaceuticals North America LLC; Is there uncapped liability under this contract?",
+      "delta": 1.0,
+      "bm25_recall": 0.0,
+      "dense_recall": 1.0
+    },
+    {
+      "query_id": "cuad:02161",
+      "query": "Consider the Reseller Agreement between Galaxy Telecom and Galaxy Telnet SRL for VoIP Products and Services; What is the notice period required to terminate the renewal?",
+      "delta": 1.0,
+      "bm25_recall": 0.0,
+      "dense_recall": 1.0
+    },
+    {
+      "query_id": "cuad:02825",
+      "query": "Consider the Strategic Alliance Agreement between Intricon Corporation and Dynamic Hearing Pty Ltd for DSP Technology Development; What is the expiration date of this contract?",
+      "delta": -1.0,
+      "bm25_recall": 1.0,
+      "dense_recall": 0.0
+    },
+    {
+      "query_id": "cuad:01643",
+      "query": "Consider the Consulting Agreement between Emerald Health Naturals, Inc. and Dr. Gaetano Morello N.D. Inc.; What is the governing law for this contract?",
+      "delta": -1.0,
+      "bm25_recall": 1.0,
+      "dense_recall": 0.0
+    },
+    {
+      "query_id": "contractnli:00826",
+      "query": "Consider AfriGIS's Non-Disclosure Agreement; Does the document allow the Receiving Party to share some Confidential Information with their employees?",
+      "delta": -1.0,
+      "bm25_recall": 1.0,
+      "dense_recall": 0.0
+    },
+    {
+      "query_id": "cuad:02409",
+      "query": "Consider the Promotion and Distribution Agreement between Whitesmoke Inc. and Google Inc.; What is the duration of any warranties provided in this contract?",
+      "delta": -1.0,
+      "bm25_recall": 1.0,
+      "dense_recall": 0.0
+    }
+  ]
+}
