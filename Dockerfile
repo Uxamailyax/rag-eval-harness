@@ -48,8 +48,18 @@ COPY pyproject.toml uv.lock ./
 # of CUDA libraries into a container that has no GPU. UV_TORCH_BACKEND=cpu tells uv
 # to resolve torch to its CPU build; dropping --frozen lets it accept that
 # substitution while every other version stays as locked.
-ENV UV_TORCH_BACKEND=cpu
-RUN uv sync --no-install-project --no-dev
+# The lockfile pins torch==2.6.0+cu124 for local GPU work, which pulls ~2.5 GB of
+# CUDA libraries into a container with no GPU. The extra index makes uv resolve
+# torch to its CPU build; every other version stays as locked.
+#
+# The timeout is raised from 30s because several wheels here are 100 MB+ and a
+# slow connection times out mid-download, which uv reports as a failure rather
+# than retrying.
+ENV UV_HTTP_TIMEOUT=300 \
+    UV_TORCH_BACKEND=cpu
+RUN uv pip install --system --no-cache \
+        torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu && \
+    uv sync --no-install-project --no-dev --inexact
 
 COPY src/ ./src/
 COPY scripts/ ./scripts/
