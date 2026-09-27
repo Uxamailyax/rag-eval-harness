@@ -39,27 +39,16 @@ ENV PYTHONUNBUFFERED=1 \
 
 # Dependencies first, so editing source does not invalidate the layer that took
 # minutes to build.
-COPY pyproject.toml uv.lock ./
-# The lockfile pins torch==2.6.0+cu124, which is correct for local GPU work and
-# wrong here: it pulls ~2.5 GB of CUDA libraries into a container with no GPU.
-# Installing CPU torch first means the sync below finds the requirement already
-# satisfied and skips the CUDA wheels entirely.
-# The lockfile pins torch==2.6.0+cu124 for local GPU work, which would pull ~2.5 GB
-# of CUDA libraries into a container that has no GPU. UV_TORCH_BACKEND=cpu tells uv
-# to resolve torch to its CPU build; dropping --frozen lets it accept that
-# substitution while every other version stays as locked.
-# The lockfile pins torch==2.6.0+cu124 for local GPU work, which pulls ~2.5 GB of
-# CUDA libraries into a container with no GPU. The extra index makes uv resolve
-# torch to its CPU build; every other version stays as locked.
+COPY pyproject.toml uv.lock README.md ./
+# torch resolves to its CPU build here via the platform marker in pyproject.toml.
+# The lockfile carries both: CUDA on Windows for local GPU work, CPU everywhere
+# else, so the container does not download 2.5 GB of CUDA libraries it cannot use.
 #
-# The timeout is raised from 30s because several wheels here are 100 MB+ and a
-# slow connection times out mid-download, which uv reports as a failure rather
+# The timeout is raised from the 30s default because several wheels are 100 MB+ and
+# a slow connection times out mid-download, which uv reports as a failure rather
 # than retrying.
-ENV UV_HTTP_TIMEOUT=300 \
-    UV_TORCH_BACKEND=cpu
-RUN uv pip install --system --no-cache \
-        torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu && \
-    uv sync --no-install-project --no-dev --inexact
+ENV UV_HTTP_TIMEOUT=300
+RUN uv sync --frozen --no-install-project --no-dev
 
 COPY src/ ./src/
 COPY scripts/ ./scripts/

@@ -28,6 +28,7 @@ services:
   # Reproduce the retrieval numbers. Needs the corpus; no API key, since retrieval is
   # entirely local — embeddings from a downloaded model, exact cosine search in numpy.
   retrieval:
+    profiles: ["manual"]
     build: .
     volumes:
       - ./data:/app/data:ro
@@ -45,6 +46,7 @@ services:
   # Regenerate answers. Resumable: every answer is appended as it arrives, and a
   # re-run skips what is already done, so hitting the daily token limit costs nothing.
   generate:
+    profiles: ["manual"]
     build: .
     volumes:
       - ./data:/app/data:ro
@@ -59,6 +61,7 @@ services:
 
   # Re-score faithfulness with the calibrated judge.
   judge:
+    profiles: ["manual"]
     build: .
     volumes:
       - ./data:/app/data:ro
@@ -72,12 +75,14 @@ services:
 
   # Rebuild the README figures from stored results.
   charts:
+    profiles: ["manual"]
     build: .
     volumes:
       - ./results:/app/results
     command: ["uv", "run", "python", "scripts/make_charts.py"]
 
   shell:
+    profiles: ["manual"]
     build: .
     volumes:
       - ./data:/app/data:ro

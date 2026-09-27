@@ -19,7 +19,7 @@ dependencies = [
     "rank-bm25>=0.2.2",
     "scikit-learn>=1.9.0",
     "sentence-transformers>=6.1.0",
-    "torch==2.6.0+cu124",
+    "torch==2.6.0",
     "tqdm>=4.70.0",
     "transformers>=5.17.0",
 ]
@@ -39,11 +39,19 @@ dev = [
 
 
 [tool.uv.sources]
-torch = { index = "pytorch-cu124" }
+# CUDA build on Windows for local GPU work; CPU build everywhere else so the
+# container does not pull 2.5 GB of CUDA libraries it cannot use.
+torch = [
+  { index = "pytorch-cu124", marker = "sys_platform == 'win32'" },
+  { index = "pytorch-cpu", marker = "sys_platform != 'win32'" },
+]
 
 [[tool.uv.index]]
 name = "pytorch-cu124"
 url = "https://download.pytorch.org/whl/cu124"
 explicit = true
 
-
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

@@ -25,5 +25,3 @@ results/runs/
 .git/
 .github/
 .idea/
-*.md
-!README.md
