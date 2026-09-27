@@ -53,7 +53,7 @@ services:
       - models:/models
       - cache:/app/.cache
     environment:
-      GROQ_API_KEY: ${GROQ_API_KEY:?set GROQ_API_KEY in .env}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
     command: ["uv", "run", "python", "scripts/phase6_generate.py",
               "--golden", "golden_v2.jsonl"]
 
@@ -67,7 +67,7 @@ services:
       - models:/models
       - cache:/app/.cache
     environment:
-      GROQ_API_KEY: ${GROQ_API_KEY:?set GROQ_API_KEY in .env}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
     command: ["uv", "run", "python", "scripts/phase7_score_all.py"]
 
   # Rebuild the README figures from stored results.
