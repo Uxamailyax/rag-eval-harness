@@ -1,0 +1,100 @@
+# Reproducing the harness.
+#
+#   docker compose up                     run the test suite and the quality gate
+#   docker compose run --rm retrieval     reproduce the Phase 5 retrieval numbers
+#   docker compose run --rm generate      regenerate answers (needs GROQ_API_KEY)
+#   docker compose run --rm judge         re-score faithfulness (needs GROQ_API_KEY)
+#   docker compose run --rm charts        rebuild the README figures
+#   docker compose run --rm shell         a shell inside the environment
+#
+# The default service needs no corpus, no API key and no network: it runs the 61
+# metric unit tests and the 10 regression tests against committed results. That is
+# deliberate — a clean clone should be able to verify something immediately, before
+# downloading 90 MB of contracts.
+#
+# Everything heavier is a named service rather than part of `up`, because those runs
+# take minutes to hours and cost API tokens.
+
+services:
+  # Default: verify the measurement layer and the quality gate.
+  eval:
+    build: .
+    container_name: rag-eval
+    volumes:
+      - ./results:/app/results
+    # No corpus mount and no API key: these tests read committed artifacts only.
+    command: ["uv", "run", "pytest", "tests/", "-v", "--tb=short"]
+
+  # Reproduce the retrieval numbers. Needs the corpus; no API key, since retrieval is
+  # entirely local — embeddings from a downloaded model, exact cosine search in numpy.
+  retrieval:
+    build: .
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
+      - ./evals:/app/evals
+      - models:/models
+      - cache:/app/.cache
+    environment:
+      # Skip the update check that otherwise retries five times per model load when
+      # the container has no network.
+      HF_HUB_OFFLINE: "0"
+    command: ["uv", "run", "python", "scripts/phase5_sweep.py",
+              "--strategies", "fixed", "--sizes", "512"]
+
+  # Regenerate answers. Resumable: every answer is appended as it arrives, and a
+  # re-run skips what is already done, so hitting the daily token limit costs nothing.
+  generate:
+    build: .
+    volumes:
+      - ./data:/app/data:ro
+      - ./evals:/app/evals
+      - ./results:/app/results
+      - models:/models
+      - cache:/app/.cache
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:?set GROQ_API_KEY in .env}
+    command: ["uv", "run", "python", "scripts/phase6_generate.py",
+              "--golden", "golden_v2.jsonl"]
+
+  # Re-score faithfulness with the calibrated judge.
+  judge:
+    build: .
+    volumes:
+      - ./data:/app/data:ro
+      - ./evals:/app/evals
+      - ./results:/app/results
+      - models:/models
+      - cache:/app/.cache
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:?set GROQ_API_KEY in .env}
+    command: ["uv", "run", "python", "scripts/phase7_score_all.py"]
+
+  # Rebuild the README figures from stored results.
+  charts:
+    build: .
+    volumes:
+      - ./results:/app/results
+    command: ["uv", "run", "python", "scripts/make_charts.py"]
+
+  shell:
+    build: .
+    volumes:
+      - ./data:/app/data:ro
+      - ./evals:/app/evals
+      - ./results:/app/results
+      - models:/models
+      - cache:/app/.cache
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+    command: ["/bin/bash"]
+    stdin_open: true
+    tty: true
+
+volumes:
+  # Embedding and reranker weights, ~1.2 GB. Named so a rebuild does not re-download.
+  models:
+  # The SQLite LLM cache and the chunk/embedding caches. Keeping these across runs is
+  # what makes re-running free: a cached call costs nothing, so only genuinely new
+  # work consumes the daily token budget.
+  cache:
