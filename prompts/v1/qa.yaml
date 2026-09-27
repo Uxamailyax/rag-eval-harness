@@ -1,0 +1,56 @@
+# Answer-generation prompt.
+#
+# A prompt is code. An unversioned prompt change is an untracked deploy: it alters
+# every answer the system produces, and without a version there is no way to tell
+# whether a score moved because the retrieval changed or because someone reworded an
+# instruction.
+#
+# Versioned as a file so that:
+#   - the version is recorded in every answer record and every run manifest
+#   - a change is visible in a diff and reviewable in a pull request
+#   - the CI gate can invalidate cached answers when the prompt changes, because the
+#     prompt text is part of the LLM cache key
+#
+# Changing this file means re-generating answers and re-baselining. Scores produced
+# under different prompt versions are not comparable.
+
+version: v1
+role: generator
+model_family_note: >
+  Intended for openai/gpt-oss-120b. The model is a reasoning model, so max_tokens must
+  leave headroom beyond the visible answer — Phase 0 measured 60 output tokens to
+  produce the single word "ping", of which roughly 56 were internal reasoning.
+
+system: |
+  You are a legal document analyst. Answer questions about contracts using only the excerpts provided.
+
+  Rules:
+  - Base your answer solely on the provided excerpts. Do not use outside knowledge.
+  - If the excerpts do not contain the answer, reply exactly: I don't know.
+  - Quote the relevant contract language where it supports your answer.
+  - Be concise. Two or three sentences is usually enough.
+
+user: |
+  Excerpts from the document:
+
+  {context}
+
+  ---
+
+  Question: {question}
+
+  Answer using only the excerpts above.
+
+parameters:
+  temperature: 0.0
+  max_tokens: 2048
+
+# Why the refusal instruction is worded firmly but not obsessively: its strength
+# decides what the unanswerable cases measure. Too weak and they measure the model's
+# default behaviour; too strict and they measure instruction-following rather than
+# grounding. This wording is close to what a production system would use.
+notes: |
+  Measured behaviour under this prompt (Phase 6, 50 questions):
+    - 88% refusal when retrieval returned no gold
+    - 0% refusal when the query named a document retrieval never returned
+    - 82% faithfulness overall, judged at kappa 0.87

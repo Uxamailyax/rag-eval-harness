@@ -1,0 +1,48 @@
+{
+  "created_at_utc": "2026-09-27T12:30:42.244512+00:00",
+  "git_sha": "ab07c60b06518771fee04a42dcb40a271ee912f9",
+  "config": {
+    "chunking": "fixed",
+    "chunk_size_tokens": 512,
+    "retriever": "dense",
+    "embedding_model": "BAAI/bge-small-en-v1.5",
+    "generator_model": "openai/gpt-oss-120b",
+    "judge_model": "qwen/qwen3.8-27b",
+    "top_k": 10,
+    "context_packing": "drop"
+  },
+  "prompts": {
+    "qa": {
+      "version": "v1"
+    },
+    "judge_faithfulness": {
+      "version": "v1"
+    }
+  },
+  "calibration": {
+    "cohens_kappa": 0.8667,
+    "ci_95": [
+      0.6667,
+      1.0
+    ],
+    "human_labels": 30,
+    "false_positives": 0,
+    "note": "Applies to judge prompt v1 only. Changing the rubric invalidates this calibration until the 30 cases are re-judged."
+  },
+  "metrics": {
+    "faithfulness": 0.82,
+    "faithfulness_answerable": 0.8,
+    "faithfulness_unanswerable": 1.0,
+    "mean_retrieval_recall_10": 0.3816,
+    "answers_scored": 50
+  },
+  "retrieval_reference": {
+    "recall_at_10": 0.4226,
+    "precision_at_10": 0.0117,
+    "ndcg_at_10": 0.2839,
+    "mrr_at_10": 0.2235,
+    "source": "scripts/phase5_sweep.py, fixed @ 512, dense, 500 queries"
+  },
+  "tolerance": 0.05,
+  "gate_note": "A metric may fall by up to `tolerance` before the build fails. Scores vary slightly between runs even at temperature 0; a gate that fires on noise gets disabled, which is worse than no gate."
+}

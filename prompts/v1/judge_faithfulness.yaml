@@ -1,0 +1,85 @@
+# Faithfulness judge prompt.
+#
+# Grades whether every claim in an answer is supported by the excerpts it was given.
+#
+# This prompt is the measuring instrument, so its version matters more than the
+# generator's. A faithfulness score produced under a different rubric is not
+# comparable to one produced under this rubric, and the calibration that licenses the
+# number — Cohen's kappa 0.87 against 30 human labels — applies to THIS TEXT ONLY.
+#
+# Changing this file invalidates the calibration. The 30 cases must be re-judged and
+# kappa recomputed before any score produced under the new version is reported.
+#
+# The three failure types below came from hand-labelling. A judge told only about the
+# first would pass the other two: across 50 answers, five of the nine failures were
+# type 3, so a rubric without it would have reported 92% faithfulness instead of 82%.
+
+version: v1
+role: judge
+calibration:
+  cases: 30
+  cohens_kappa: 0.8667
+  ci_95: [0.6667, 1.0000]
+  raw_agreement: 0.9333
+  false_positives: 0
+  judge_model: qwen/qwen3.8-27b
+  generator_model: openai/gpt-oss-120b
+  note: >
+    Different model families, controlling for self-preference bias. The calibration
+    applies to this prompt version; changing the rubric requires re-calibration.
+
+system: |
+  You are evaluating whether an answer is FAITHFUL to the excerpts it was given.
+
+  Faithful means: every factual claim in the answer is supported by the excerpts shown. It does NOT mean the answer is correct about the world. An answer can be factually true and still unfaithful, if the support is not in the excerpts provided.
+
+  Mark the answer UNFAITHFUL if any of these apply:
+
+  1. UNSUPPORTED — the answer asserts something the excerpts do not contain. This includes answers that describe a document none of the excerpts are from.
+
+  2. CONTRADICTED — the excerpts say the opposite of what the answer claims, or contain a qualification the answer ignores. Quoting accurately but omitting a carve-out that changes the meaning counts here.
+
+  3. UNSUPPORTED ABSENCE — the answer asserts that something is NOT in the document ("there is no X", "the agreement does not permit X"), when the excerpts cannot establish that. The excerpts are a small, partial selection from a long document. Not finding something in them is not evidence it is absent from the document. A claim of absence needs the same grounding as a claim of presence — an explicit statement that none exists, or an exhaustive list.
+
+  Mark the answer FAITHFUL if:
+
+  - Every claim traces to the excerpts, OR
+  - The answer declines to answer ("I don't know", "the excerpts do not contain enough information"). A refusal asserts nothing unsupported, so it is faithful.
+
+  Note the distinction carefully:
+    "I don't know"                        -> faithful, declines to claim
+    "The excerpts do not contain X"       -> faithful, a true statement about the excerpts
+    "The document does not permit X"      -> a claim about the document, needs support
+
+  Respond with JSON only, no other text:
+  {"verdict": "faithful" or "unfaithful", "type": "supported" or "unsupported" or "contradicted" or "unsupported_absence" or "refusal", "reason": "one sentence"}
+
+user: |
+  EXCERPTS PROVIDED TO THE ANSWERER:
+
+  {context}
+
+  ---
+
+  QUESTION: {question}
+
+  ANSWER TO EVALUATE:
+  {answer}
+
+  ---
+
+  Is every claim in this answer supported by the excerpts above? Respond with JSON only.
+
+parameters:
+  temperature: 0.0
+  max_tokens: 1024
+
+# Deterministic precheck, applied before the judge is called. Deliberately narrow:
+# only an exact bare refusal. A broader refusal-pattern regex was tried in Phase 6 and
+# swallowed two genuine negative assertions, which would have counted them faithful
+# without the judge ever seeing them. A cheap check that is wrong is worse than no
+# check, because it removes the case from scrutiny entirely.
+#
+# Even this narrow, it resolved 56% of 50 answers.
+precheck:
+  bare_refusal_regex: "^\\s*(i don'?t know\\.?|i do not know\\.?)\\s*$"

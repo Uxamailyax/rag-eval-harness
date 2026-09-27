@@ -1,0 +1,81 @@
+name: eval
+
+# Runs on every push and pull request. Two jobs, separated because they need
+# different things:
+#
+#   metrics     unit tests for the retrieval metric implementations. No data, no API
+#               keys, no corpus — pure arithmetic on hand-computed cases. Always runs.
+#
+#   regression  the quality gate. Compares stored evaluation results against the
+#               committed baseline and fails the build when quality drops.
+#
+# The regression job deliberately does NOT call the LLM API. Re-generating fifty
+# answers and re-judging them on every push would either exhaust a free-tier quota or
+# get the gate disabled. It reads results that the pipeline regenerates whenever
+# anything affecting them changes — the prompt text is part of the LLM cache key, so
+# editing a prompt invalidates exactly the calls it affects.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  metrics:
+    name: metric unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: set up python
+        run: uv python install 3.12
+
+      - name: install dependencies
+        run: uv sync --frozen
+
+      # These need no corpus and no API key: every expected value was computed by
+      # hand before the code was written. A failure here means the measurement layer
+      # is wrong, which would make every downstream number meaningless.
+      - name: run metric tests
+        run: uv run pytest tests/test_retrieval_metrics.py -v --tb=short
+
+  regression:
+    name: quality gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: set up python
+        run: uv python install 3.12
+
+      - name: install dependencies
+        run: uv sync --frozen
+
+      # Fails the build if faithfulness or retrieval recall has fallen more than the
+      # tolerance below results/baseline.json, if the prompt version no longer matches
+      # the one the baseline was measured under, or if the judge model changed —
+      # because the calibration that licenses the score applies to one specific judge
+      # and one specific rubric.
+      - name: run regression gate
+        run: uv run pytest tests/test_regression.py -v --tb=short
+
+      - name: report
+        if: always()
+        run: |
+          if [ -f results/baseline.json ]; then
+            echo "### Baseline" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            python -c "import json;d=json.load(open('results/baseline.json'));print(json.dumps({'metrics':d['metrics'],'calibration':{k:d['calibration'][k] for k in ('cohens_kappa','human_labels','false_positives')}},indent=2))" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi

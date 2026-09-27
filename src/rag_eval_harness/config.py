@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     # Pinned exactly. A model ID change invalidates comparisons, so it lands
     # in the manifest and the cache key.
     generator_model: str = "openai/gpt-oss-120b"
-    judge_model: str = "qwen/qwen3.6-27b"
+    judge_model: str = "qwen/qwen3.8-27b"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     reranker_model: str = "BAAI/bge-reranker-base"
 
