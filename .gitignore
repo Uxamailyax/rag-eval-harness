@@ -8,3 +8,5 @@ results/runs/
 
 # local copies with corpus text
 *.jsonl.full
+cases.txt 
+notes.txt 
