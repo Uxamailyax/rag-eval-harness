@@ -40,7 +40,13 @@ ENV PYTHONUNBUFFERED=1 \
 # Dependencies first, so editing source does not invalidate the layer that took
 # minutes to build.
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-install-project --no-dev
+# The lockfile pins torch==2.6.0+cu124, which is correct for local GPU work and
+# wrong here: it pulls ~2.5 GB of CUDA libraries into a container with no GPU.
+# Installing CPU torch first means the sync below finds the requirement already
+# satisfied and skips the CUDA wheels entirely.
+RUN uv venv && \
+    uv pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu && \
+    uv sync --frozen --no-install-project --no-dev --inexact
 
 COPY src/ ./src/
 COPY scripts/ ./scripts/
