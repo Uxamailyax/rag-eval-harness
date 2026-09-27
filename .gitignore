@@ -5,3 +5,6 @@ __pycache__/
 *.pyc
 .cache/
 results/runs/
+
+# local copies with corpus text
+*.jsonl.full
